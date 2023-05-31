@@ -22,7 +22,7 @@ jobs:
 
       - name: Get commit hash
         id: get_hash
-        run: echo "hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        run: echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Use desired version of Node.js
         uses: actions/setup-node@v2
