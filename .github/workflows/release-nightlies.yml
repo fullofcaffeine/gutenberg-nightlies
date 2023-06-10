@@ -60,7 +60,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: nightly-${{ needs.build.outputs.commit_hash }}
+          tag_name: vnightly-${{ needs.build.outputs.commit_hash }}
           release_name: Gutenberg Nightly ${{ needs.build.outputs.commit_hash }}
           body: Nightly build of the Gutenberg plugin
           draft: false
