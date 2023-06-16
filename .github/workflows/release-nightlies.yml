@@ -82,7 +82,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           printf "${{ needs.build.outputs.nightly_version }}\n" >> previous-releases.txt
           git add previous-releases.txt
-          git commit -m "Add ${ { needs.build.outputs.nightly_version }} to previous-releases.txt"
+          git commit -m "Add ${{ needs.build.outputs.nightly_version }} to previous-releases.txt"
           git push origin HEAD
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
