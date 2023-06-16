@@ -49,8 +49,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
-        with:
-          persist-credentials: false
 
       - name: Configure Git
         run: |
@@ -62,7 +60,9 @@ jobs:
           echo "vnightly-${{ needs.build.outputs.commit_hash }}" >> releases.txt
           git add releases.txt
           git commit -m "Add vnightly-${{ needs.build.outputs.commit_hash }} to releases.txt"
-          git push
+          git push origin HEAD
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download artifact
         uses: actions/download-artifact@v2
