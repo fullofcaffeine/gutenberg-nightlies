@@ -22,7 +22,7 @@ jobs:
 
       - name: Get commit hash
         id: get_hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Use desired version of Node.js
         uses: actions/setup-node@v2
@@ -41,14 +41,29 @@ jobs:
           name: gutenberg-plugin
           path: ./gutenberg.zip
 
-
-
   release:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Update releases.txt
+        run: |
+          echo "vnightly-${{ needs.build.outputs.commit_hash }}" >> releases.txt
+          git add releases.txt
+          git commit -m "Add vnightly-${{ needs.build.outputs.commit_hash }} to releases.txt"
+          git push
+
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
