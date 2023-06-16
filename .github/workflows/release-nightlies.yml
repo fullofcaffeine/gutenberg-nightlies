@@ -57,6 +57,8 @@ jobs:
 
       - name: Update releases.txt
         run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
           echo "vnightly-${{ needs.build.outputs.commit_hash }}" >> releases.txt
           git add releases.txt
           git commit -m "Add vnightly-${{ needs.build.outputs.commit_hash }} to releases.txt"
