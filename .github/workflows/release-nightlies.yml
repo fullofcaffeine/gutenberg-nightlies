@@ -65,7 +65,7 @@ jobs:
         run: |
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          printf "vnightly-${{ needs.build.outputs.commit_hash }}\n" " >> previous-releases.txt
+          printf "vnightly-${{ needs.build.outputs.commit_hash }}\n" >> previous-releases.txt
           git add releases.txt
           git commit -m "Add vnightly-${{ needs.build.outputs.commit_hash }} to previous-releases.txt"
           git push origin HEAD
