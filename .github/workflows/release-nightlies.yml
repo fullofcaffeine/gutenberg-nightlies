@@ -55,13 +55,19 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "github-actions@github.com"
 
-      - name: Update releases.txt
+      # This is mostly a hack to keep the releases in the right order in the releases page. Github
+      # order by commit, but this repo doesn't really keep changes by default - it just fetches
+      # from the core GB repo. To keep the activity and make sure the order is mantained, we
+      # create a commit every time the action runs. This commit will be used for the next run
+      # and will make sure the last nightly release stays at the top fo the releases, ordered
+      # as the last one.
+      - name: Update previous-releases.txt
         run: |
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          [ -s releases.txt ] && echo "vnightly-${{ needs.build.outputs.commit_hash }}" >> releases.txt || echo -n "vnightly-${{ needs.build.outputs.commit_hash }}" >> releases.txt
+          printf "vnightly-${{ needs.build.outputs.commit_hash }}\n" " >> previous-releases.txt
           git add releases.txt
-          git commit -m "Add vnightly-${{ needs.build.outputs.commit_hash }} to releases.txt"
+          git commit -m "Add vnightly-${{ needs.build.outputs.commit_hash }} to previous-releases.txt"
           git push origin HEAD
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
