@@ -29,7 +29,7 @@ jobs:
       - name: Get Gutenberg version
         id: get_version
         run: |
-          echo "version=$(grep -oP "'(?<=Version: ).*'" gutenberg.php)" >> $GITHUB_OUTPUT
+          echo "version=$(sed -n '/Version: /p' gutenberg.php | awk '{print $3}')" >> $GITHUB_OUTPUT
 
       - name: Build version string
         id: build_version_string
