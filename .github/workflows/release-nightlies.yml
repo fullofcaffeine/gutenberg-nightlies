@@ -68,22 +68,28 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "$gutenbergnightlies@users.noreply.github.com"
+          git config user.name "${{ github.actor }}"
+          git config user.email "gutenbergnightlies@users.noreply.github.com"
 
-      # This is mostly a hack to keep the releases in the right order in the releases page. Github
-      # orders by commit, but this repo doesn't really keep changes by default - it just fetches
-      # from the core GB repo. To keep the activity and make sure the order is maintained, we
-      # create a commit every time the action runs. This commit will be used for the next run
-      # and will make sure the last nightly release stays at the top of the releases, ordered
-      # as the last one.
-      - name: Update previous-releases.txt
+      - name: Update previous-releases.txt and release
         run: |
-          git config --global user.name "${{ github.actor }}"
           printf "${{ needs.build.outputs.nightly_version }}\n" >> previous-releases.txt
           git add previous-releases.txt
           git commit -m "Add ${{ needs.build.outputs.nightly_version }} to previous-releases.txt"
           git push origin HEAD
+
+          curl \
+            -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{
+              "tag_name": "${{ needs.build.outputs.nightly_version }}",
+              "target_commitish": "$(git rev-parse HEAD)",
+              "name": "Gutenberg Nightly ${{ needs.build.outputs.nightly_version }}",
+              "body": "Nightly build of the Gutenberg plugin",
+              "draft": false,
+              "prerelease": false
+            }' \
+            https://api.github.com/repos/${{ github.repository }}/releases
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -92,17 +98,10 @@ jobs:
         with:
           name: gutenberg-plugin
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.build.outputs.nightly_version }}
-          release_name: Gutenberg Nightly ${{ needs.build.outputs.nightly_version }}
-          body: Nightly build of the Gutenberg plugin
-          draft: false
-          prerelease: false
+      - name: Get release
+        id: get_release
+        run: |
+          echo "RELEASE_ID=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ needs.build.outputs.nightly_version }} | jq .id)" >> $GITHUB_OUTPUT
 
       - name: Upload Release Asset
         id: upload-release-asset
@@ -110,7 +109,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: https://api.github.com/repos/${{ github.repository }}/releases/${{ steps.get_release.outputs.RELEASE_ID }}/assets
           asset_path: ./gutenberg.zip
           asset_name: gutenberg-nightly.zip
           asset_content_type: application/zip
