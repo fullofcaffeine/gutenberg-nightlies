@@ -5,15 +5,13 @@ on:
     # Runs at 00:00 UTC everyday
     - cron: "0 0 * * *"
   workflow_dispatch:
+  repository_dispatch:
+    types: [create_release]
 
 jobs:
   build:
     name: Build Release Artifact
     runs-on: ubuntu-latest
-    outputs:
-      commit_hash: ${{ steps.get_hash.outputs.hash }}
-      gutenberg_version: ${{ steps.get_version.outputs.version }}
-      nightly_version: ${{ steps.build_version_string.outputs.nightly_version }}
 
     steps:
       - name: Checkout Gutenberg Repo
@@ -34,7 +32,7 @@ jobs:
       - name: Build version string
         id: build_version_string
         run: |
-          echo "nightly_version=vnightly-${{ steps.get_version.outputs.version }}-${{ steps.get_hash.outputs.hash }}" >> $GITHUB_OUTPUT
+          echo "nightly_version=vnightly-${{ env.version }}-${{ env.hash }}" >> $GITHUB_OUTPUT
 
       - name: Set Nightly Version
         run: |
@@ -57,35 +55,40 @@ jobs:
           name: gutenberg-plugin
           path: ./gutenberg.zip
 
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "gutenbergnightlies@users.noreply.github.com"
+
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Update previous-releases.txt
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          printf "${{ steps.build_version_string.outputs.nightly_version }}\n" >> previous-releases.txt
+          git add previous-releases.txt
+          git commit -m "Add ${{ steps.build_version_string.outputs.nightly_version }} to previous-releases.txt"
+          git push origin HEAD
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dispatch create release event
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          event-type: create_release
+          client-payload: '{"nightly_version": "${{ steps.build_version_string.outputs.nightly_version  }}"}'
+
   release:
     name: Create Release
-    needs: build
+    if: github.event_name == 'repository_dispatch' && github.event.action == 'create_release'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
-
-      - name: Configure Git
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "$gutenbergnightlies@users.noreply.github.com"
-
-      # This is mostly a hack to keep the releases in the right order in the releases page. Github
-      # orders by commit, but this repo doesn't really keep changes by default - it just fetches
-      # from the core GB repo. To keep the activity and make sure the order is maintained, we
-      # create a commit every time the action runs. This commit will be used for the next run
-      # and will make sure the last nightly release stays at the top of the releases, ordered
-      # as the last one.
-      - name: Update previous-releases.txt
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          printf "${{ needs.build.outputs.nightly_version }}\n" >> previous-releases.txt
-          git add previous-releases.txt
-          git commit -m "Add ${{ needs.build.outputs.nightly_version }} to previous-releases.txt"
-          git push origin HEAD
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download artifact
         uses: actions/download-artifact@v2
@@ -98,8 +101,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ needs.build.outputs.nightly_version }}
-          release_name: Gutenberg Nightly ${{ needs.build.outputs.nightly_version }}
+          tag_name: ${{ github.event.client_payload.nightly_version }}
+          release_name: Gutenberg Nightly ${{ github.event.client_payload.nightly_version }}
           body: Nightly build of the Gutenberg plugin
           draft: false
           prerelease: false
