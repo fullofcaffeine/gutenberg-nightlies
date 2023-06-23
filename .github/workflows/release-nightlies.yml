@@ -47,9 +47,7 @@ jobs:
           cache: "npm"
 
       - name: Build Gutenberg plugin ZIP file
-        run: |
-          echo 'Stable tag: V.V.V' > readme.txt
-          zip -j gutenberg.zip readme.txt
+        run: ./bin/build-plugin-zip.sh
         env:
           NO_CHECKS: "true"
 
