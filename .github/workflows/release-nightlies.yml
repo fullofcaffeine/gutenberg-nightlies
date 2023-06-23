@@ -112,12 +112,12 @@ jobs:
           echo "RELEASE_ID=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ needs.build.outputs.nightly_version }} | jq .id)" >> $GITHUB_OUTPUT
 
       - name: Upload Release Asset
-        id: upload_release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: https://uploads.github.com/repos/${{ github.repository_owner }}/${{ github.repository }}/releases/${{ steps.get_release.outputs.RELEASE_ID }}/assets
-          asset_path: ./gutenberg.zip
-          asset_name: gutenberg-nightly.zip
-          asset_content_type: application/zip
+        run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Content-Type: application/octet-stream" \
+            "https://uploads.github.com/repos/${{ github.repository_owner }}/${{ github.repository }}/releases/${{ steps.get_release.outputs.RELEASE_ID }}/assets?name=gutenberg-nightly.zip" \
+            -data-binary "@gutenberg.zip"
