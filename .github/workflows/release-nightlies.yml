@@ -95,7 +95,7 @@ jobs:
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -d '{
               "tag_name": "${{ needs.build.outputs.nightly_version }}",
-              "name": "Gutenberg Nightly ${{ needs.build.outputs.nightly_version }}",
+              "name": "Gutenberg Nightly ${{ needs.build.outputs.nightly_version }} created from https://github.com/WordPress/gutenberg/commit/${{ needs.build.outputs.commit_hash }}.",
               "body": "Nightly build of the Gutenberg plugin",
               "draft": false,
               "prerelease": false
