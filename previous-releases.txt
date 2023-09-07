@@ -86,3 +86,4 @@ vnightly-16.6.0-rc.1-3b114f7
 vnightly-16.6.0-rc.1-25d328a
 vnightly-16.6.0-rc.1-7a4330d
 vnightly-16.6.0-rc.1-dbef71a
+vnightly-16.6.0-dedc74d
